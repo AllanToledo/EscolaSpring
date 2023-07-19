@@ -4,8 +4,17 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobParameters;
+import org.springframework.batch.core.JobParametersBuilder;
+import org.springframework.batch.core.JobParametersInvalidException;
+import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.batch.core.repository.JobExecutionAlreadyRunningException;
+import org.springframework.batch.core.repository.JobInstanceAlreadyCompleteException;
+import org.springframework.batch.core.repository.JobRestartException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,7 +52,8 @@ public class TurmaController {
 
 		if (!violations.isEmpty()) {
 			// Com violações de validação, retorna erro
-			String menProblema = violations.stream().map(ConstraintViolation::getMessage).collect(Collectors.joining(", "));
+			String menProblema = violations.stream().map(ConstraintViolation::getMessage)
+					.collect(Collectors.joining(", "));
 			return ResponseEntity.badRequest().body(menProblema);
 		}
 		turmaRepository.save(turma);
@@ -65,6 +75,28 @@ public class TurmaController {
 	public String removerTurma(@PathVariable("id") Long id) {
 		turmaRepository.deleteById(id);
 		return "redirect:/turma/lista";
+	}
+
+	@Autowired
+	JobLauncher jobLauncher;
+
+	@Autowired
+	Job job;
+
+	@GetMapping("/lerarquivo")
+	public ResponseEntity lerArquivo() {
+		JobParameters params = new JobParametersBuilder()
+				.addString("JobID", String.valueOf(System.currentTimeMillis()))
+				.toJobParameters();
+		try {
+			jobLauncher.run(job, params);
+		} catch (JobExecutionAlreadyRunningException | JobRestartException | JobInstanceAlreadyCompleteException
+				| JobParametersInvalidException e) {
+			e.printStackTrace();
+			return ResponseEntity.internalServerError().build();
+		}
+		return ResponseEntity.ok().body("sucess");
+
 	}
 
 }
