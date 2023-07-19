@@ -42,7 +42,7 @@ public class TurmaController {
 	private Validator validator;
 
 	@GetMapping
-	public String mostraForm(Turma turma) {
+	public String mostraForm() {
 		return "add-turma";
 	}
 
@@ -52,9 +52,9 @@ public class TurmaController {
 
 		if (!violations.isEmpty()) {
 			// Com violações de validação, retorna erro
-			String menProblema = violations.stream().map(ConstraintViolation::getMessage)
+			String erros = violations.stream().map(ConstraintViolation::getMessage)
 					.collect(Collectors.joining(", "));
-			return ResponseEntity.badRequest().body(menProblema);
+			return ResponseEntity.badRequest().body(erros);
 		}
 		turmaRepository.save(turma);
 		ModelAndView modelAndView = new ModelAndView("add-turma");
